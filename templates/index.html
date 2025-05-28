@@ -1,0 +1,157 @@
+<!-- <!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Drowsiness Detection</title>
+  <style>
+    video, canvas {
+      display: block;
+      margin: auto;
+    }
+    h3 {
+      text-align: center;
+      font-family: Arial, sans-serif;
+    }
+  </style>
+</head>
+<body>
+
+  <h3>Driver Drowsiness Detector</h3>
+  <video id="video" width="640" height="480" autoplay></video>
+  <h3>Drowsiness Timer: <span id="drowsy-timer">0.0</span> sec</h3>
+
+  <script>
+    const video = document.getElementById('video');
+    const timerDisplay = document.getElementById('drowsy-timer');
+
+    let drowsyStartTime = null;
+    let timerInterval = null;
+
+    function updateTimerDisplay(seconds) {
+      timerDisplay.innerText = seconds.toFixed(1);
+    }
+
+    function resetTimer() {
+      drowsyStartTime = null;
+      clearInterval(timerInterval);
+      updateTimerDisplay(0.0);
+    }
+
+    async function setupCamera() {
+      try {
+        const stream = await navigator.mediaDevices.getUserMedia({ video: true });
+        video.srcObject = stream;
+      } catch (err) {
+        console.error("Error accessing webcam:", err);
+      }
+    }
+
+    function captureAndSendFrame() {
+      const canvas = document.createElement('canvas');
+      canvas.width = video.videoWidth;
+      canvas.height = video.videoHeight;
+      const context = canvas.getContext('2d');
+      context.drawImage(video, 0, 0, canvas.width, canvas.height);
+
+      const imageData = canvas.toDataURL('image/jpeg');
+
+      fetch('/check_drowsiness', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ image: imageData })
+      })
+      .then(response => response.json())
+      .then(data => {
+        if (data.drowsy) {
+          if (!drowsyStartTime) {
+            drowsyStartTime = Date.now();
+
+            timerInterval = setInterval(() => {
+              const elapsed = (Date.now() - drowsyStartTime) / 1000;
+              updateTimerDisplay(elapsed);
+            }, 100);
+          }
+        } else {
+          resetTimer();
+        }
+      })
+      .catch(error => {
+        console.error("Error:", error);
+      });
+    }
+
+    setupCamera().then(() => {
+      setInterval(captureAndSendFrame, 1000); // Every 1 second
+    });
+  </script>
+
+</body>
+</html> -->
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Driver Drowsiness Detector</title>
+    <style>
+        body {
+            background-color: #0e0e0e;
+            color: white;
+            text-align: center;
+            font-family: Arial, sans-serif;
+        }
+        h1 {
+            color: #00ffd5;
+            margin-top: 20px;
+        }
+        #video-frame {
+            border: 5px solid #00ffd5;
+            margin-top: 20px;
+            width: 720px;
+            height: 540px;
+        }
+        #status {
+            font-size: 26px;
+            margin-top: 20px;
+            font-weight: bold;
+        }
+        .green {
+            color: #00ff00;
+        }
+        .red {
+            color: #ff0000;
+        }
+        .yellow {
+            color: #ffff00;
+        }
+    </style>
+</head>
+<body>
+    <h1>🚗 Driver Drowsiness Detector</h1>
+    <img id="video-frame" src="{{ url_for('video_feed') }}">
+    <div id="status">Drowsiness Status: <span class="yellow">Loading...</span></div>
+
+    <script>
+        function updateStatusColor(statusText) {
+            const statusElement = document.getElementById('status');
+            if (statusText.includes('Normal')) {
+                statusElement.innerHTML = 'Drowsiness Status: <span class="green">🔵 Normal</span>';
+            } else if (statusText.includes('Drowsy')) {
+                statusElement.innerHTML = 'Drowsiness Status: <span class="red">🔴 Drowsy</span>';
+            } else if (statusText.includes('Auto')) {
+                statusElement.innerHTML = 'Drowsiness Status: <span class="yellow">🟡 Auto Mode</span>';
+            } else {
+                statusElement.innerHTML = 'Drowsiness Status: <span class="yellow">Loading...</span>';
+            }
+        }
+
+        setInterval(() => {
+            fetch('/status')
+                .then(response => response.json())
+                .then(data => {
+                    updateStatusColor(data.status);
+                });
+        }, 1000);
+    </script>
+</body>
+</html>
